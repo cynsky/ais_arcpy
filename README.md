@@ -31,6 +31,6 @@ zone = '10'
 # PREPROCESS RAW
 # ------------------------------------------------------------------------------
 for month in months:
-    raw_month = raw.Raw_Month(zone, year, month)
+    raw_month = raw.Raw_Month(root, zone, year, month)
     raw_month.preprocess()
 ```
