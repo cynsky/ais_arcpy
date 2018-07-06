@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''
-.. module:: common
+.. module:: ais_arcpy.util
     :language: Python Version 2.7
     :platform: Windows 10
     :synopsis: commonly needed utility functions
