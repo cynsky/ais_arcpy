@@ -36,3 +36,6 @@ for month in months:
 raw_mmsi = raw.Raw_MMSI('C:\\Users\\User\\Documents\\CSV Data', zone, year)
 raw_mmsi.select_MMSI_in_EEZ()
 ```
+
+# Warning
+The preprocessing step can take over a day to run depending on your system and the number of months you are processing.
