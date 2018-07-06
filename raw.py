@@ -31,29 +31,14 @@ from . import files
 class Raw_Month(object):
 
     '''
-    Process raw NAIS data from MarineCadastre. The data is downloaded in
-    ArcGIS format for each month.
-
-    The ship’s latitude, longitude, speed and course over ground, heading,
-    and timestamp are obtained from the main position sensor (usually
-    GPS). The rate of turn (ROT) is obtained from the ship’s ROT
-    sensor or derived from the gyro-compass. The navigation status
-    is manually updated by the navigation officer.
-
-    The USCG maintains the major federal acquisition project called 
-    Nationwide Automatic Identification System (NAIS). NAIS, which is 
-    separate from regional AIS-based VTS and not meant to be a navigation 
-    aid, is a system of AIS equipment that receives AIS messages from vessels 
-    operating in and approaching U.S. waters and sends it to Coast Guard 
-    centers and other government agencies. The USCG stores historical AIS data 
-    gathered through NAIS and makes it available by request and through MarineCadastre.
-
-    The data is split by zone, year, and month. This class downloads the data
-    from MarineCadastre for the given zone, year, and month. The main data
-    file is the Broadcast shapefile which contains the AIS dynamic data. This
-    file is split by the ship identification number (MMSI). The latitude and
-    longitude of each data point is added to the feature table. Finally, the
-    data for a given MMSI is aggregated in a mmsi_gdb across months.
+    The USCG stores historical AIS data gathered through NAIS and makes it 
+    available by request and through MarineCadastre. This class downloads raw
+    AIS data from MarineCadastre. The data is downloaded as a ArcGIS GDB for 
+    each month. The main data file is the Broadcast shapefile which contains 
+    the AIS dynamic data. This  file is split by the ship identification 
+    number (MMSI). The latitude and longitude of each data point is added to 
+    the feature table. Finally, the data for a given MMSI is aggregated in a 
+    mmsi_gdb across months.
     '''
 
     def __init__(self, directory, zone, year, month):
@@ -154,11 +139,11 @@ class Raw_Month(object):
 
     def status_check(self, list):
         '''
-        Check that a list of status values contains a stop status and a
-        go status.
+        Check that a list of status values contains a stop status 
+        and a go status.
         '''
         stop = [1, 5, 6]
-        go = [0,2, 3, 4, 7, 8, 11, 12]
+        go = [0, 2, 3, 4, 7, 8, 11, 12]
         has_stop = set(stop) & set(list)
         has_go = set(go) & set(list)
         if has_stop and has_go:
