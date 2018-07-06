@@ -30,9 +30,9 @@ zone = '10'
 # PREPROCESS RAW
 # ------------------------------------------------------------------------------
 for month in months:
-    raw_month = raw.Raw_Month('C:\\PhD\\ArcGIS Data', zone, year, month)
+    raw_month = raw.Raw_Month('C:\\Users\\User\\\Documents\ArcGIS Data', zone, year, month)
     raw_month.preprocess()
 
-raw_mmsi = raw.Raw_MMSI('C:\\PhD\\CSV Data', zone, year)
+raw_mmsi = raw.Raw_MMSI('C:\\Users\\User\\Documents\\CSV Data', zone, year)
 raw_mmsi.select_MMSI_in_EEZ()
 ```
