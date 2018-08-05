@@ -7,16 +7,9 @@ Script to process 2014 zone 10 data.
 # IMPORTS
 # ------------------------------------------------------------------------------
 import arcpy
-import datetime
-from glob import glob
-from os.path import join
-import pandas as pd
-from mongoengine import *
-import plinky
 import logging
 
-from nais import raw
-import aws_mongo
+from ais_arcpy import raw
 
 
 # ------------------------------------------------------------------------------
