@@ -21,9 +21,7 @@ import os
 from os.path import exists, expanduser, join
 import webbrowser
 
-from . import user
 from . import util
-from . import files
 
 
 # ------------------------------------------------------------------------------
