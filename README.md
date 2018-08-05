@@ -16,7 +16,7 @@ which do not contain any data in the US EEZ are deleted. The remaining shapefile
 import arcpy
 from os.path import join
 
-from nais import raw
+from ais_arcpy import raw
 
 
 # ------------------------------------------------------------------------------
@@ -31,10 +31,10 @@ zone = '10'
 # ------------------------------------------------------------------------------
 for month in months:
     raw_month = raw.Raw_Month('C:\\Users\\User\\Documents\\ArcGIS Data', zone, year, month)
-    raw_month.preprocess()
+    raw_month.preprocess_month()
 
 raw_mmsi = raw.Raw_MMSI('C:\\Users\\User\\Documents\\CSV Data', zone, year)
-raw_mmsi.select_MMSI_in_EEZ()
+raw_mmsi.preprocess_mmsi()
 ```
 
 # Warning
