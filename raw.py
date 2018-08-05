@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''
-.. module:: raw
+.. module:: ais_arcpy.raw
     :language: Python Version 2.7.13
     :platform: Windows 10
     :synopsis: preprocess NAIS data from MarineCadastre
@@ -21,6 +21,7 @@ import os
 from os.path import exists, expanduser, join
 import webbrowser
 
+from . import user
 from . import util
 from . import files
 
@@ -31,17 +32,18 @@ from . import files
 class Raw_Month(object):
 
     '''
-    The USCG stores historical AIS data gathered through NAIS and makes it 
-    available by request and through MarineCadastre. This class downloads raw
-    AIS data from MarineCadastre. The data is downloaded as a ArcGIS GDB for 
-    each month. The main data file is the Broadcast shapefile which contains 
-    the AIS dynamic data. This  file is split by the ship identification 
-    number (MMSI). The latitude and longitude of each data point is added to 
-    the feature table. Finally, the data for a given MMSI is aggregated in a 
-    mmsi_gdb across months.
+    Process raw NAIS data from MarineCadastre. The data is downloaded in
+    ArcGIS format for each month.
+
+    The data is split by zone, year, and month. This class downloads the data
+    from MarineCadastre for the given zone, year, and month. The main data
+    file is the Broadcast shapefile which contains the AIS dynamic data. This
+    file is split by the ship identification number (MMSI). The latitude and
+    longitude of each data point is added to the feature table. Finally, the
+    data for a given MMSI is aggregated in a mmsi_gdb across months.
     '''
 
-       def __init__(self, directory, zone, year, month):
+    def __init__(self, directory, zone, year, month):
         self.root = directory
         self.year = year
         self.month = month
@@ -64,6 +66,23 @@ class Raw_Month(object):
 
         # Logger
         self.logger = logging.getLogger(__name__)
+
+    def preprocess_month(self):
+        '''
+        Main method.
+        '''
+        print('Current arcpy workspace: %s' % arcpy.env.workspace)
+        self.logger.info('Current arcpy workspace: %s', arcpy.env.workspace)
+        self.download_raw_data()
+        self.copy_raw_data()
+        self.split_by_mmsi()
+
+        self.logger.info('Getting list of feature classes in %s...', self.gdb_copy)
+        arcpy.env.workspace = join(self.workspace, self.gdb_copy)
+        featureClasses = arcpy.ListFeatureClasses()
+        for fc in featureClasses:
+            self.add_xy(fc)
+            self.aggregate_month_mmsi(fc)
 
     @property
     def url(self):
@@ -137,32 +156,6 @@ class Raw_Month(object):
         self.logger.info('Deleting input broadcast file %s', self.broadcast)
         arcpy.Delete_management(input_file)
 
-    def status_check(self, list):
-        '''
-        Check that a list of status values contains a stop
-        status and a go status.
-        '''
-        stop = [1, 5, 6]
-        go = [0, 2, 3, 4, 7, 8, 11, 12]
-        has_stop = set(stop) & set(list)
-        has_go = set(go) & set(list)
-        if has_stop and has_go:
-            return True
-        return False
-
-    def correct_status(self, fc):
-        '''
-        Check if feature class contains the correct status values.
-        '''
-        status = list()
-        field = 'Status'
-        with arcpy.da.SearchCursor(fc, [field]) as cursor:
-            for row in cursor:
-                status.append(row[0])
-                if self.status_check(status):
-                    return True
-        return False
-
     def add_xy(self, fc):
         '''
         Add XY fields to feature class.
@@ -196,35 +189,11 @@ class Raw_Month(object):
         self.logger.info('Deleting month file for %s...', name_fc)
         arcpy.Delete_management(fc)
 
-    def preprocess(self):
-        '''
-        Main method.
-        '''
-        print('Current arcpy workspace: %s' % arcpy.env.workspace)
-        self.logger.info('Current arcpy workspace: %s', arcpy.env.workspace)
-        self.download_raw_data()
-        self.copy_raw_data()
-        self.split_by_mmsi()
-
-        self.logger.info('Getting list of feature classes in %s...', self.gdb_copy)
-        arcpy.env.workspace = join(self.workspace, self.gdb_copy)
-        featureClasses = arcpy.ListFeatureClasses()
-        # Using 2013 data as "stop status" learning data
-        for fc in featureClasses:
-            if self.year == '2013' and not self.correct_status(fc):
-                arcpy.Delete_management(fc)
-                continue
-            self.add_xy(fc)
-            self.aggregate_month_mmsi(fc)
-
-
 
 class Raw_MMSI(object):
 
     '''
-    Keep only the data that is within the United States EEZ. The EEZ is 
-    downloaded and the US EEZ is selected. The data that is within the 
-    US EEZ is written to csv.
+    Process monthly MMSI files.
     '''
 
     def __init__(self, directory, zone, year):
@@ -263,6 +232,25 @@ class Raw_MMSI(object):
 
         # Logger
         self.logger = logging.getLogger()
+
+
+    def preprocess_mmsi(self):
+        '''
+        Select only EEZ points and write to csv.
+        '''
+        self.download_eez()
+        self.make_eez_us()
+
+        arcpy.env.workspace = join(self.workspace, self.gdb_mmsi)
+        featureClasses = arcpy.ListFeatureClasses()
+        for fc in featureClasses:
+            name = arcpy.Describe(fc).name
+            if '_eez' in name:
+                continue
+            self.select_eez(fc)
+        featureClasses = arcpy.ListFeatureClasses()
+        for fc in featureClasses:
+            self.to_csv(fc)
 
     def download_eez(self):
         '''
@@ -344,6 +332,10 @@ class Raw_MMSI(object):
         self.logger.info('Deleting original shapefile %s', name_mmsi)
         arcpy.Delete_management(name_mmsi)
 
+    # def add_time_index(self, fc):
+    #     field = 'BaseDateTime'
+    #     arcpy.AddIndex_management(fc, [field], 'DateTimeIndex', 'UNIQUE', 'ASCENDING')
+
     def to_csv(self, fc):
         '''
         Write shapefile to csv.
@@ -359,21 +351,3 @@ class Raw_MMSI(object):
                 with arcpy.da.SearchCursor(fc, self.fields) as cursor:
                     for row in cursor:
                         writer.writerow(row)
-
-    def select_MMSI_in_EEZ(self):
-        '''
-        Select only EEZ points and write to csv.
-        '''
-        self.download_eez()
-        self.make_eez_us()
-
-        arcpy.env.workspace = join(self.workspace, self.gdb_mmsi)
-        featureClasses = arcpy.ListFeatureClasses()
-        for fc in featureClasses:
-            name = arcpy.Describe(fc).name
-            if '_eez' in name:
-                continue
-            self.select_eez(fc)
-        featureClasses = arcpy.ListFeatureClasses()
-        for fc in featureClasses:
-            self.to_csv(fc)
