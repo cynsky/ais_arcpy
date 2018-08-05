@@ -330,10 +330,6 @@ class Raw_MMSI(object):
         self.logger.info('Deleting original shapefile %s', name_mmsi)
         arcpy.Delete_management(name_mmsi)
 
-    # def add_time_index(self, fc):
-    #     field = 'BaseDateTime'
-    #     arcpy.AddIndex_management(fc, [field], 'DateTimeIndex', 'UNIQUE', 'ASCENDING')
-
     def to_csv(self, fc):
         '''
         Write shapefile to csv.
